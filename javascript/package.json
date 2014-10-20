@@ -1,0 +1,30 @@
+{ "name": "silk-api-client"
+, "version"     : "1.0.0"
+, "description" : "silk.co API client"
+, "main"        : "src/silk.js"
+, "scripts"     : { "test": "echo \"Error: no test specified\" && exit 1" }
+, "keywords"    :
+  [ "silk"
+  , "api"
+  , "client"
+  ]
+, "dependencies":
+  { "request" : "2.x"
+  , "q"       : "1.x"
+  }
+, "author"      :
+  { "name"  : "Silk B.V."
+  , "email" : "code@silk.co"
+  }
+, "license"     : "BSD-3-Clause"
+, "homepage"    : "https://github.com/silkapp/silk-api-client"
+, "bugs"        :
+  { "url"   : "https://github.com/silkapp/silk-api-client/issues"
+  , "email" : "code@silk.co"
+  }
+, "files" :
+    [ "CHANGELOG.md"
+    , "LICENSE"
+    , "README.md"
+    ]
+}
