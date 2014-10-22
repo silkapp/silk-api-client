@@ -375,6 +375,11 @@ SilkApi.prototype.Site.prototype.Import.uploadJson =
   {
     return SilkApi.ajaxCall("POST", this.contextUrl + 'upload-json/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.cookieJar);
   };
+SilkApi.prototype.Site.prototype.Import.uploadUrl =
+  function (json, success, error, params, callOpts)
+  {
+    return SilkApi.ajaxCall("POST", this.contextUrl + 'upload-url/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.cookieJar);
+  };
 SilkApi.prototype.Site.prototype.Import.prototype.remove =
   function (success, error, params, callOpts)
   {
