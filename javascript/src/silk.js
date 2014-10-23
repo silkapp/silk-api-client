@@ -87,7 +87,7 @@ function nodeRequest (method, url, params, onSuccess, onError, contentType, acce
     , qs      : allParams
     , method  : method
     , headers : headers
-    , jar     : cookieJar ? cookieJar : undefined
+    , jar     : cookieJar
     };
 
   if (data) callData.body = data;
