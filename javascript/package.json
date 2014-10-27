@@ -28,4 +28,8 @@
     , "README.md"
     , "src"
     ]
+, "repository" :
+   { "type" : "git"
+   , "url" : "https://github.com/silkapp/silk-api-client.git"
+   }
 }
