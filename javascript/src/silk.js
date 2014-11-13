@@ -253,6 +253,11 @@ SilkApi.prototype.Site.prototype.wipe =
   {
     return SilkApi.ajaxCall("POST", this.secureContextUrl + 'wipe/', params, success, error, "text/plain", "text/json", text, callOpts, this.modifyRequest);
   };
+SilkApi.prototype.Site.prototype.suggestPage =
+  function (json, success, error, params, callOpts)
+  {
+    return SilkApi.ajaxCall("POST", this.contextUrl + 'suggest-page/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.modifyRequest);
+  };
 SilkApi.prototype.Site.prototype.File =
   function File (url, secureUrl, modifyRequest)
   {
