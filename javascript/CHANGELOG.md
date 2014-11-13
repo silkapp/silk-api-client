@@ -1,5 +1,11 @@
 # Changelog
 
+### 2.1.0
+
+Additions:
+
+* `Silk:suggestPage` takes the title of a page and suggest a non-occupied uri using the same normalization scheme as Silk uses internally.
+
 ## 2.0.0
 
 Breaking changes:
