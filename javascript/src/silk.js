@@ -1,6 +1,16 @@
 (function (window) {
 
-var isNodeJs = typeof module === "object" && module && typeof module.exports === "object";
+// in nodejs, global is an object
+// in normal browser environment, global is undefined
+// in webpack, global is set to window
+var isNodeJs   = typeof global !== "undefined" && global.window === undefined;
+var isCommonJs = typeof module === "object" && module && typeof module.exports === "object";
+
+// require, that the nodejs will handle, but will remain not processed by webpack and the like
+var obfuscatedRequire = function (moduleName)
+{
+  return module["r" + "equire"](moduleName);
+}
 
 var SilkApi =
   function (url, secureUrl, modifyRequest)
@@ -10,11 +20,11 @@ var SilkApi =
     var contextUrl       = url + postfix;
     var secureContextUrl = (secureUrl || url.replace(/^http:/, "https:")) + postfix;
 
-    this.cookieJar = isNodeJs ? require('request').jar() : undefined;
+    this.cookieJar = isNodeJs ? obfuscatedRequire('request').jar() : undefined;
 
-    if(!modifyRequest) modifyRequest = function(req) { return req; };
+    if(!modifyRequest) modifyRequest = function (req) { return req; };
 
-    var finalModifyRequest = function(req)
+    var finalModifyRequest = function (req)
     {
       if (isNodeJs) req.jar = self.cookieJar;
       return modifyRequest(req);
@@ -23,6 +33,7 @@ var SilkApi =
     SilkApi.setContext(this, contextUrl, secureContextUrl, finalModifyRequest);
   };
 
+var jqFun;
 if (isNodeJs)
 {
   // Export as Node module.
@@ -32,13 +43,19 @@ if (isNodeJs)
 }
 else
 {
-  if (typeof define === "function" && define.amd)
+  if (isCommonJs) {
+    // Export as CommonJs
+    module.exports = SilkApi;
+    jqFun = function () { return require("jquery"); };
+  } else if (typeof define === "function" && define.amd) {
     // Export as AMD.
     define("SilkApi", [], function () { return SilkApi; });
-
-  else
+    jqFun = function () { return window.$; };
+  } else {
     // Export as global.
     window.SilkApi = SilkApi;
+    jqFun = function () { return window.$; };
+  }
 
   SilkApi.ajaxCall = jQueryRequest;
 }
@@ -55,13 +72,14 @@ SilkApi.defaultHeaders = {};
 function jQueryRequest (method, url, params, success, error, contentType, acceptHeader, data, callOpts, modifyRequest)
 {
   var q = window.Q || function (a) { return a };
+  var jq = jqFun();
 
-  var headers = $.extend(true, {}, SilkApi.defaultHeaders);
+  var headers = jq.extend(true, {}, SilkApi.defaultHeaders);
   SilkApi.addObject(headers, { Accept : acceptHeader });
 
   var callData =
     { type        : method
-    , url         : url + (params ? '?' + $.param(params) : '')
+    , url         : url + (params ? '?' + jq.param(params) : '')
     , cache       : false
     , success     : success || function () {}
     , error       : error || function () {}
@@ -76,7 +94,7 @@ function jQueryRequest (method, url, params, success, error, contentType, accept
   SilkApi.addObject(callData, SilkApi.defaultAjaxOptions);
   SilkApi.addObject(callData, callOpts);
 
-  return q($.ajax(callData));
+  return q(jq.ajax(callData));
 }
 
 function nodeRequest (method, url, params, onSuccess, onError, contentType, acceptHeader, data, callOpts, modifyRequest)
@@ -110,7 +128,7 @@ function nodeRequest (method, url, params, onSuccess, onError, contentType, acce
 
   return require("q").Promise(function (resolve, reject)
   {
-    require("request")(callData, callback);
+    obfuscatedRequire("request")(callData, callback);
 
     function callback (error, message, body)
     {
@@ -172,7 +190,7 @@ SilkApi.setContext =
         SilkApi.setContext(obj[fld], url + postfix, secureUrl + postfix, modifyRequest);
       }
     }
-  };SilkApi.prototype.version = "1.13.4";
+  };SilkApi.prototype.version = "1.14.0";
 SilkApi.prototype.Site =
   function Site (url, secureUrl, modifyRequest)
   {
@@ -397,6 +415,21 @@ SilkApi.prototype.Site.prototype.Import.uploadUrl =
   function (json, success, error, params, callOpts)
   {
     return SilkApi.ajaxCall("POST", this.contextUrl + 'upload-url/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.modifyRequest);
+  };
+SilkApi.prototype.Site.prototype.Import.uploadSheetsUrl =
+  function (json, success, error, params, callOpts)
+  {
+    return SilkApi.ajaxCall("POST", this.contextUrl + 'upload-sheets-url/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.modifyRequest);
+  };
+SilkApi.prototype.Site.prototype.Import.uploadSheets =
+  function (file, success, error, params, callOpts)
+  {
+    return SilkApi.ajaxCall("POST", this.contextUrl + 'upload-sheets/', params, success, error, "application/octet-stream", "text/json", file, callOpts, this.modifyRequest);
+  };
+SilkApi.prototype.Site.prototype.Import.selectSheet =
+  function (json, success, error, params, callOpts)
+  {
+    return SilkApi.ajaxCall("POST", this.contextUrl + 'select-sheet/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.modifyRequest);
   };
 SilkApi.prototype.Site.prototype.Import.prototype.remove =
   function (success, error, params, callOpts)
@@ -814,7 +847,7 @@ SilkApi.prototype.Site.prototype.Pin.list =
 SilkApi.prototype.Site.prototype.Pin.saveByCollection =
   function (name, xml, success, error, params, callOpts)
   {
-    return SilkApi.ajaxCall("PUT", this.contextUrl + 'collection/' + encodeURIComponent(name) + '/', params, success, error, "text/xml", "text/json", xml, callOpts, this.modifyRequest);
+    return SilkApi.ajaxCall("PUT", this.contextUrl + 'collection/' + encodeURIComponent(name) + '/', params, success, error, "text/xml", "text/xml", xml, callOpts, this.modifyRequest);
   };
 SilkApi.prototype.Site.prototype.Pin.removeManyByCollection =
   function (json, success, error, params, callOpts)
@@ -871,72 +904,23 @@ SilkApi.prototype.Site.prototype.Pin.prototype.Version.prototype.restore =
   {
     return SilkApi.ajaxCall("POST", this.contextUrl + 'restore/', params, success, error, "text/plain", "text/json", undefined, callOpts, this.modifyRequest);
   };
-SilkApi.prototype.Site.prototype.Subscription =
-  function Subscription (url, secureUrl, modifyRequest)
+SilkApi.prototype.Site.prototype.Subscriber =
+  function Subscriber (url, secureUrl, modifyRequest)
   {
-    if (this instanceof Subscription)
+    if (this instanceof Subscriber)
     {
       SilkApi.setContext(this, url, secureUrl, modifyRequest);
     }
     else
     {
-      return Subscription.access(url, secureUrl, modifyRequest);
+      return Subscriber.access(url, secureUrl, modifyRequest);
     }
   };
-SilkApi.prototype.Site.prototype.Subscription.apiObjectType = "resourceDir";
-SilkApi.prototype.Site.prototype.Subscription.byId =
-  function (uuid)
-  {
-    var postfix = 'id/' + encodeURIComponent(uuid) + '/';
-    var accessor = new this(this.contextUrl + postfix, this.secureContextUrl + postfix, this.modifyRequest);
-    accessor.get =
-      function (success, error, params, callOpts)
-      {
-        return SilkApi.ajaxCall("GET", this.contextUrl + '', params, success, error, "text/plain", "text/json", undefined, callOpts, this.modifyRequest);
-      };
-    return accessor;
-  };
-SilkApi.prototype.Site.prototype.Subscription.current =
-  function ()
-  {
-    var postfix = 'current/';
-    var accessor = new this(this.contextUrl + postfix, this.secureContextUrl + postfix, this.modifyRequest);
-    accessor.get =
-      function (success, error, params, callOpts)
-      {
-        return SilkApi.ajaxCall("GET", this.contextUrl + '', params, success, error, "text/plain", "text/json", undefined, callOpts, this.modifyRequest);
-      };
-    return accessor;
-  };
-SilkApi.prototype.Site.prototype.Subscription.list =
+SilkApi.prototype.Site.prototype.Subscriber.apiObjectType = "resourceDir";
+SilkApi.prototype.Site.prototype.Subscriber.list =
   function (success, error, params, callOpts)
   {
     return SilkApi.ajaxCall("GET", this.contextUrl + '', params, success, error, "text/plain", "text/json", undefined, callOpts, this.modifyRequest);
-  };
-SilkApi.prototype.Site.prototype.Subscription.saveById =
-  function (uuid, json, success, error, params, callOpts)
-  {
-    return SilkApi.ajaxCall("PUT", this.contextUrl + 'id/' + encodeURIComponent(uuid) + '/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.modifyRequest);
-  };
-SilkApi.prototype.Site.prototype.Subscription.saveManyById =
-  function (json, success, error, params, callOpts)
-  {
-    return SilkApi.ajaxCall("PUT", this.contextUrl + 'id/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.modifyRequest);
-  };
-SilkApi.prototype.Site.prototype.Subscription.removeManyById =
-  function (json, success, error, params, callOpts)
-  {
-    return SilkApi.ajaxCall("DELETE", this.contextUrl + 'id/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.modifyRequest);
-  };
-SilkApi.prototype.Site.prototype.Subscription.saveCurrent =
-  function (json, success, error, params, callOpts)
-  {
-    return SilkApi.ajaxCall("PUT", this.contextUrl + 'current/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.modifyRequest);
-  };
-SilkApi.prototype.Site.prototype.Subscription.prototype.remove =
-  function (success, error, params, callOpts)
-  {
-    return SilkApi.ajaxCall("DELETE", this.contextUrl + '', params, success, error, "text/plain", "text/json", undefined, callOpts, this.modifyRequest);
   };
 SilkApi.prototype.Site.prototype.Tag =
   function Tag (url, secureUrl, modifyRequest)
@@ -1252,36 +1236,55 @@ SilkApi.prototype.User.prototype.Permission.access =
       };
     return accessor;
   };
-SilkApi.prototype.User.prototype.Subscription =
-  function Subscription (url, secureUrl, modifyRequest)
+SilkApi.prototype.User.prototype.SubscriptionSite =
+  function SubscriptionSite (url, secureUrl, modifyRequest)
   {
-    if (this instanceof Subscription)
+    if (this instanceof SubscriptionSite)
     {
       SilkApi.setContext(this, url, secureUrl, modifyRequest);
     }
     else
     {
-      return Subscription.access(url, secureUrl, modifyRequest);
+      return SubscriptionSite.access(url, secureUrl, modifyRequest);
     }
   };
-SilkApi.prototype.User.prototype.Subscription.apiObjectType = "resourceDir";
-SilkApi.prototype.User.prototype.Subscription.prototype.Site =
-  function Site (url, secureUrl, modifyRequest)
+SilkApi.prototype.User.prototype.SubscriptionSite.apiObjectType = "resourceDir";
+SilkApi.prototype.User.prototype.SubscriptionSite.byUri =
+  function (repositoryURI)
   {
-    if (this instanceof Site)
-    {
-      SilkApi.setContext(this, url, secureUrl, modifyRequest);
-    }
-    else
-    {
-      return Site.access(url, secureUrl, modifyRequest);
-    }
+    var postfix = 'uri/' + encodeURIComponent(repositoryURI) + '/';
+    var accessor = new this(this.contextUrl + postfix, this.secureContextUrl + postfix, this.modifyRequest);
+    accessor.get =
+      function (success, error, params, callOpts)
+      {
+        return SilkApi.ajaxCall("GET", this.contextUrl + '', params, success, error, "text/plain", "text/json", undefined, callOpts, this.modifyRequest);
+      };
+    return accessor;
   };
-SilkApi.prototype.User.prototype.Subscription.prototype.Site.apiObjectType = "resourceDir";
-SilkApi.prototype.User.prototype.Subscription.prototype.Site.list =
+SilkApi.prototype.User.prototype.SubscriptionSite.list =
   function (success, error, params, callOpts)
   {
     return SilkApi.ajaxCall("GET", this.contextUrl + '', params, success, error, "text/plain", "text/json", undefined, callOpts, this.modifyRequest);
+  };
+SilkApi.prototype.User.prototype.SubscriptionSite.saveByUri =
+  function (repositoryURI, json, success, error, params, callOpts)
+  {
+    return SilkApi.ajaxCall("PUT", this.contextUrl + 'uri/' + encodeURIComponent(repositoryURI) + '/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.modifyRequest);
+  };
+SilkApi.prototype.User.prototype.SubscriptionSite.saveManyByUri =
+  function (json, success, error, params, callOpts)
+  {
+    return SilkApi.ajaxCall("PUT", this.contextUrl + 'uri/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.modifyRequest);
+  };
+SilkApi.prototype.User.prototype.SubscriptionSite.removeManyByUri =
+  function (json, success, error, params, callOpts)
+  {
+    return SilkApi.ajaxCall("DELETE", this.contextUrl + 'uri/', params, success, error, "text/json", "text/json", JSON.stringify(json), callOpts, this.modifyRequest);
+  };
+SilkApi.prototype.User.prototype.SubscriptionSite.prototype.remove =
+  function (success, error, params, callOpts)
+  {
+    return SilkApi.ajaxCall("DELETE", this.contextUrl + '', params, success, error, "text/plain", "text/json", undefined, callOpts, this.modifyRequest);
   };
 
 })(this);
