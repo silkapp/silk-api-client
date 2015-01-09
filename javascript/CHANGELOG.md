@@ -1,5 +1,20 @@
 # Changelog
 
+### 3.0.0
+
+* Update to API version `1.14`
+
+Breaking changes:
+
+* New interface for subscriptions, modify a user's subscription by using `SilkApi:User:SubscriptionSite`, and see the subscribers of a site with `SilkApi:Site:Subscription`
+
+Additions:
+
+* `SilkApi:Site:Import.uploadSheetsUrl`
+* `SilkApi:Site:Import.uploadSheets`
+* `SilkApi:Site:Import.selectSheet`
+* Subscription frequency can now be `"none"`, which will disable e-mail digests
+
 ### 2.1.0
 
 Additions:
