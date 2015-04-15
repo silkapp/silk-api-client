@@ -1,5 +1,44 @@
 # Changelog
 
+## 4.0.0
+
+* Update to API version `1.16`
+
+#### Changes in V1.16:
+
+The format of all timestamps has been unified to be in the format `YYYY-MM-DDTHH:MM:SSZ`, the following types and properties are affected:
+* `Autosave.Full`: `created`, `modified`
+* `Autosave`: `created`, `modified`
+* `File`: `created`, `modified`
+* `Page.Version`: `created`
+* `Permission.Site`: `created`
+* `Pin.Version`: `created`
+* `Pin`: `created`, `modified`
+* `Tag.Version`: `created`
+* `Tag`: `created`, `modified`
+* `User.Invite`: `created`, `modified`, `sent`
+
+Properties named `repository` have been renamed to `site`, the following types are affected:
+* `Autosave`
+* `Permission`
+* `User.Invite`
+
+Other breaking changes:
+* `Import.SiteStatus`: Contains a new version of `Status`
+* `Import.Status`: Contains a new state `computingTagList` which occurs after `inProgress` and before `complete`/`errored`.
+* `Site`: The `public` property has been removed, use `privacy` instead.
+
+Non-breaking additions:
+* `Import.Progress`: Added `errorInfo : Array<ErrorInfo>`
+* `Import.Status`:
+  * The `complete` state now contains `optional VersionIds`
+  * The `errored` state now contains `{ versions : optional VersionIds, errors : Array<ErrorInfo> }`
+
+New types:
+
+* `Import.ErrorInfo`: If importing a page fails this type contains the row in the CSV/spreadsheet along with the uri and title the page would have had if it imported successfully. You can use this to know which pages to retry or create manually.
+* `VersionIds { pageId : int, tagId : int }`
+
 ### 3.0.0
 
 * Update to API version `1.14`
