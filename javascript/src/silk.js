@@ -190,7 +190,7 @@ SilkApi.setContext =
         SilkApi.setContext(obj[fld], url + postfix, secureUrl + postfix, modifyRequest);
       }
     }
-  };SilkApi.prototype.version = "1.14.0";
+  };SilkApi.prototype.version = "1.16.0";
 SilkApi.prototype.Site =
   function Site (url, secureUrl, modifyRequest)
   {
@@ -1032,6 +1032,11 @@ SilkApi.prototype.Site.prototype.Taglist.access =
       };
     return accessor;
   };
+SilkApi.prototype.Site.prototype.Taglist.prototype.calculate =
+  function (success, error, params, callOpts)
+  {
+    return SilkApi.ajaxCall("POST", this.contextUrl + 'calculate/', params, success, error, "text/plain", "text/json", undefined, callOpts, this.modifyRequest);
+  };
 SilkApi.prototype.User =
   function User (url, secureUrl, modifyRequest)
   {
@@ -1224,17 +1229,10 @@ SilkApi.prototype.User.prototype.Permission =
     }
   };
 SilkApi.prototype.User.prototype.Permission.apiObjectType = "resourceDir";
-SilkApi.prototype.User.prototype.Permission.access =
-  function ()
+SilkApi.prototype.User.prototype.Permission.list =
+  function (success, error, params, callOpts)
   {
-    var postfix = '';
-    var accessor = new this(this.contextUrl + postfix, this.secureContextUrl + postfix, this.modifyRequest);
-    accessor.get =
-      function (success, error, params, callOpts)
-      {
-        return SilkApi.ajaxCall("GET", this.contextUrl + '', params, success, error, "text/plain", "text/json", undefined, callOpts, this.modifyRequest);
-      };
-    return accessor;
+    return SilkApi.ajaxCall("GET", this.contextUrl + '', params, success, error, "text/plain", "text/json", undefined, callOpts, this.modifyRequest);
   };
 SilkApi.prototype.User.prototype.SubscriptionSite =
   function SubscriptionSite (url, secureUrl, modifyRequest)
